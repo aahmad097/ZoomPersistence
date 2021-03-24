@@ -1,7 +1,7 @@
 # Zoom Persistence via Symlink Abuse
 
 ## Background: 
-By default Zoom gets installed under a User's "AppData" directory (C:\Users\{USER}\AppData\Roaming\Zoom\) which is writeable by the user in question if the Zoom executable located in the the Zoom "bin" directory gets replaced with another one. All the Symbolic links (short cuts) will point to this new exe.
+By default Zoom gets installed under a User's "AppData" directory (C:\Users\{USER}\AppData\Roaming\Zoom\) which is writeable by the user in question. If the Zoom executable located in the the Zoom "bin" directory gets replaced with another. All the Symbolic links (short cuts) will point to the new exe.
 
 ## Functionality 
 This script generates a C++ stager using the operator provided arguments (Compilation is currently handled by mingw and generates a 32bit exe). The script then renames the zoom executable on the filesystem to a user-defined name and uploads the stager to the zoom directory under the file name "zoom.exe".
