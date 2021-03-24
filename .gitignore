@@ -339,3 +339,6 @@ ASALocalRun/
 # BeatPulse healthcheck temp database
 healthchecksdb
 Builder.exe
+Source/1689221508_127.0.0.1_80.cpp
+Source/127.0.0.1_80_test.cpp
+Output/zoom.exe
